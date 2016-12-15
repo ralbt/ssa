@@ -13,6 +13,16 @@ RSpec.describe User, type: :model do
   end
 
   context 'validations' do
+    before do
+      User.any_instance.stub(:send_activation_notification).and_return(true)
+    end
+
+    it 'is not valid without name' do
+      user = FactoryGirl.build(:user, name: '')
+      expect(user).to_not be_valid
+      expect(user.errors[:name].first).to eq 'can\'t be blank'
+    end
+
     it 'is valid email' do
       user = FactoryGirl.build(:user, email: 'abc@gmail.com')
       user.valid?
@@ -43,6 +53,15 @@ RSpec.describe User, type: :model do
       user = FactoryGirl.build(:user, status: nil)
       user.save
       expect(user.status).to eq User.statuses[:created]
+    end
+  end
+
+  context 'callbacks' do
+    it 'should trigger creation callbacks' do
+      user = FactoryGirl.build(:user)
+      expect(user).to receive(:send_activation_notification).and_return(true)
+      expect(user).to receive(:set_status_to_created).and_return(true)
+      user.save
     end
   end
 end
